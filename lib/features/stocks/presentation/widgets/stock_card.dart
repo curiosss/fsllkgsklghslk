@@ -9,100 +9,118 @@ class StockCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          children: [
-            // Logo
-            ClipOval(
-              child: CachedNetworkImage(
-                imageUrl: stock.logo,
-                width: 48,
-                height: 48,
-                fit: BoxFit.cover,
-                placeholder: (context, url) =>
-                    Container(color: Colors.grey[200]),
-                errorWidget: (context, url, error) =>
-                    const Icon(Icons.broken_image),
-              ),
-            ),
-            const SizedBox(width: 16),
+    final isPositive = stock.changePercent >= 0;
+    final changeColor =
+        isPositive ? const Color(0xFF2ECC71) : const Color(0xFFE74C3C);
 
-            // Name and Symbol
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    stock.companyName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    stock.tradingSymbol,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-
-            // Price, Change and Compliance
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '\$${stock.price.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+          // Company Logo
+          ClipOval(
+            child: CachedNetworkImage(
+              imageUrl: stock.logo,
+              width: 40,
+              height: 40,
+              fit: BoxFit.cover,
+              placeholder: (_, __) => Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 4),
+              ),
+              errorWidget: (_, __, ___) => Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.business, size: 20, color: Colors.grey[400]),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          // Symbol + Company name
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Row(
                   children: [
-                    Icon(
-                      stock.changePercent >= 0
-                          ? Icons.arrow_upward
-                          : Icons.arrow_downward,
-                      size: 14,
-                      color: stock.changePercent >= 0
-                          ? Colors.green
-                          : Colors.red,
-                    ),
                     Text(
-                      '${stock.changePercent.abs().toStringAsFixed(2)}%',
-                      style: TextStyle(
-                        color: stock.changePercent >= 0
-                            ? Colors.green
-                            : Colors.red,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
+                      stock.tradingSymbol,
+                      style: const TextStyle(
+                        fontFamily: 'SFProText',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    // Compliance badge
+                    Container(
+                      width: 18,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: stock.isCompliant
+                            ? const Color(0xFF2ECC71)
+                            : const Color(0xFFE74C3C),
+                      ),
+                      child: Icon(
+                        stock.isCompliant ? Icons.check : Icons.close,
+                        size: 12,
+                        color: Colors.white,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
-                  stock.isCompliant ? 'Compliant' : 'Non-Compliant',
+                  stock.companyName,
                   style: TextStyle(
-                    fontSize: 10,
-                    color: stock.isCompliant ? Colors.green : Colors.grey,
-                    fontWeight: FontWeight.bold,
+                    fontFamily: 'SFProText',
+                    fontSize: 13,
+                    color: Colors.grey[500],
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+
+          // Price + Change %
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${stock.price.toStringAsFixed(2)} ${stock.currency}',
+                style: const TextStyle(
+                  fontFamily: 'SFProText',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${isPositive ? "+" : ""}${stock.changePercent.toStringAsFixed(2)}%',
+                style: TextStyle(
+                  fontFamily: 'SFProText',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: changeColor,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

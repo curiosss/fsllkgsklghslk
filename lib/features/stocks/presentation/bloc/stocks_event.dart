@@ -1,50 +1,21 @@
-import 'package:equatable/equatable.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-abstract class StocksEvent extends Equatable {
-  const StocksEvent();
+part 'stocks_event.freezed.dart';
 
-  @override
-  List<Object> get props => [];
-}
+@freezed
+sealed class StocksEvent with _$StocksEvent {
+  const factory StocksEvent.getStocks({
+    String? search,
+    String? country,
+    bool? compliance,
+  }) = GetStocksEvent;
 
-class GetStocksEvent extends StocksEvent {
-  final int page;
-  final String? search;
-  final String? country;
-  final bool? compliance;
+  const factory StocksEvent.loadMore() = LoadMoreStocksEvent;
 
-  const GetStocksEvent({
-    this.page = 1,
-    this.search,
-    this.country,
-    this.compliance,
-  });
+  const factory StocksEvent.search(String query) = SearchStocksEvent;
 
-  @override
-  List<Object> get props => [
-    page,
-    search ?? '',
-    country ?? '',
-    compliance ?? '',
-  ];
-}
-
-class LoadMoreStocksEvent extends StocksEvent {}
-
-class SearchStocksEvent extends StocksEvent {
-  final String query;
-  const SearchStocksEvent(this.query);
-
-  @override
-  List<Object> get props => [query];
-}
-
-class FilterStocksEvent extends StocksEvent {
-  final bool? compliance;
-  final String? country;
-
-  const FilterStocksEvent({this.compliance, this.country});
-
-  @override
-  List<Object> get props => [compliance ?? '', country ?? ''];
+  const factory StocksEvent.filter({
+    bool? compliance,
+    String? country,
+  }) = FilterStocksEvent;
 }

@@ -6,7 +6,7 @@ import 'package:stock_investment_app/features/stocks/presentation/bloc/stocks_st
 class StocksBloc extends Bloc<StocksEvent, StocksState> {
   final GetStocks getStocks;
 
-  StocksBloc({required this.getStocks}) : super(StocksInitial()) {
+  StocksBloc({required this.getStocks}) : super(const StocksInitial()) {
     on<GetStocksEvent>(_onGetStocks);
     on<LoadMoreStocksEvent>(_onLoadMoreStocks);
     on<SearchStocksEvent>(_onSearchStocks);
@@ -17,8 +17,8 @@ class StocksBloc extends Bloc<StocksEvent, StocksState> {
     GetStocksEvent event,
     Emitter<StocksState> emit,
   ) async {
-    emit(StocksLoading());
-    final result = await getStocks(
+    emit(const StocksLoading());
+    final (failure, stocks, totalCount) = await getStocks(
       GetStocksParams(
         page: 1,
         search: event.search,
@@ -27,7 +27,6 @@ class StocksBloc extends Bloc<StocksEvent, StocksState> {
       ),
     );
 
-    final (failure, stocks) = result;
     if (failure != null) {
       emit(StocksError(failure.message));
     } else if (stocks != null) {
@@ -36,6 +35,7 @@ class StocksBloc extends Bloc<StocksEvent, StocksState> {
           stocks: stocks,
           hasReachedMax: stocks.length < 15,
           page: 1,
+          totalCount: totalCount,
           search: event.search,
           country: event.country,
           compliance: event.compliance,
@@ -48,35 +48,32 @@ class StocksBloc extends Bloc<StocksEvent, StocksState> {
     LoadMoreStocksEvent event,
     Emitter<StocksState> emit,
   ) async {
-    if (state is StocksLoaded) {
-      final currentState = state as StocksLoaded;
-      if (currentState.hasReachedMax) return;
+    final currentState = state;
+    if (currentState is! StocksLoaded || currentState.hasReachedMax) return;
 
-      final nextPage = currentState.page + 1;
-      final result = await getStocks(
-        GetStocksParams(
-          page: nextPage,
-          search: currentState.search,
-          country: currentState.country,
-          compliance: currentState.compliance,
-        ),
-      );
+    final nextPage = currentState.page + 1;
+    final (failure, newStocks, _) = await getStocks(
+      GetStocksParams(
+        page: nextPage,
+        search: currentState.search,
+        country: currentState.country,
+        compliance: currentState.compliance,
+      ),
+    );
 
-      final (failure, newStocks) = result;
-      if (failure != null) {
-        // Handle error or ignore
-      } else if (newStocks != null) {
-        if (newStocks.isEmpty) {
-          emit(currentState.copyWith(hasReachedMax: true));
-        } else {
-          emit(
-            currentState.copyWith(
-              stocks: List.of(currentState.stocks)..addAll(newStocks),
-              hasReachedMax: newStocks.length < 15,
-              page: nextPage,
-            ),
-          );
-        }
+    if (failure != null) {
+      // Keep current state on pagination error
+    } else if (newStocks != null) {
+      if (newStocks.isEmpty) {
+        emit(currentState.copyWith(hasReachedMax: true));
+      } else {
+        emit(
+          currentState.copyWith(
+            stocks: [...currentState.stocks, ...newStocks],
+            hasReachedMax: newStocks.length < 15,
+            page: nextPage,
+          ),
+        );
       }
     }
   }
@@ -85,7 +82,18 @@ class StocksBloc extends Bloc<StocksEvent, StocksState> {
     SearchStocksEvent event,
     Emitter<StocksState> emit,
   ) async {
-    add(GetStocksEvent(search: event.query));
+    String? currentCountry;
+    bool? currentCompliance;
+    if (state is StocksLoaded) {
+      final loaded = state as StocksLoaded;
+      currentCountry = loaded.country;
+      currentCompliance = loaded.compliance;
+    }
+    add(GetStocksEvent(
+      search: event.query.isEmpty ? null : event.query,
+      country: currentCountry,
+      compliance: currentCompliance,
+    ));
   }
 
   Future<void> _onFilterStocks(

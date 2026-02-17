@@ -19,13 +19,14 @@ class GetStocksParams {
   });
 }
 
-class GetStocks extends UseCase<(Failure?, List<Stock>?), GetStocksParams> {
+class GetStocks
+    extends UseCase<(Failure?, List<Stock>?, int), GetStocksParams> {
   final StockRepository repository;
 
   GetStocks(this.repository);
 
   @override
-  Future<(Failure?, List<Stock>?)> call(GetStocksParams params) async {
+  Future<(Failure?, List<Stock>?, int)> call(GetStocksParams params) async {
     return await repository.getStocks(
       page: params.page,
       perPage: params.perPage,

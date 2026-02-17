@@ -1,10 +1,8 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:stock_investment_app/core/error/failures.dart';
-import 'package:stock_investment_app/features/stocks/data/models/stock_model.dart';
+import 'package:dio/dio.dart';
+import 'package:stock_investment_app/features/stocks/data/models/stocks_response.dart';
 
 abstract class StockRemoteDataSource {
-  Future<List<StockModel>> getStocks({
+  Future<StocksResponse> getStocks({
     int page = 1,
     int perPage = 15,
     String? search,
@@ -14,21 +12,21 @@ abstract class StockRemoteDataSource {
 }
 
 class StockRemoteDataSourceImpl implements StockRemoteDataSource {
-  final http.Client client;
+  final Dio dio;
 
-  StockRemoteDataSourceImpl({required this.client});
+  StockRemoteDataSourceImpl({required this.dio});
 
   @override
-  Future<List<StockModel>> getStocks({
+  Future<StocksResponse> getStocks({
     int page = 1,
     int perPage = 15,
     String? search,
     String? country,
     bool? compliance,
   }) async {
-    final queryParams = {
-      'pagination[page]': page.toString(),
-      'pagination[perPage]': perPage.toString(),
+    final queryParams = <String, dynamic>{
+      'pagination[page]': page,
+      'pagination[perPage]': perPage,
     };
 
     if (search != null && search.isNotEmpty) {
@@ -38,31 +36,14 @@ class StockRemoteDataSourceImpl implements StockRemoteDataSource {
       queryParams['filters[country]'] = country;
     }
     if (compliance != null) {
-      queryParams['filters[compliance]'] = compliance.toString();
+      queryParams['filters[compliance]'] = compliance;
     }
 
-    final uri = Uri.https(
-      'dev.codeunion.kz',
-      '/ailat/api/stocks/list',
-      queryParams,
+    final response = await dio.get(
+      'https://dev.codeunion.kz/ailat/api/stocks/list',
+      queryParameters: queryParams,
     );
 
-    try {
-      final response = await client.get(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonResponse = json.decode(response.body);
-        final List<dynamic> data = jsonResponse['data'];
-        return data.map((e) => StockModel.fromJson(e)).toList();
-      } else {
-        throw ServerFailure('Server Error: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (e is ServerFailure) rethrow;
-      throw NetworkFailure(e.toString());
-    }
+    return StocksResponse.fromJson(response.data as Map<String, dynamic>);
   }
 }
